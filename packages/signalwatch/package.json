@@ -11,6 +11,15 @@
   ],
   "author": "Signal Tools Authors",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/being-cheema/signal-tools",
+    "directory": "packages/signalwatch"
+  },
+  "bugs": {
+    "url": "https://github.com/being-cheema/signal-tools/issues"
+  },
+  "homepage": "https://github.com/being-cheema/signal-tools#readme",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
