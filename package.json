@@ -1,0 +1,27 @@
+{
+  "name": "signal-tools-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo containing manifestlock and signalwatch",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "npm run --workspaces --if-present typecheck",
+    "test": "vitest run",
+    "build": "npm run --workspaces --if-present build",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.20.0",
+    "@types/node": "^22.13.4",
+    "eslint": "^9.20.1",
+    "prettier": "^3.5.1",
+    "tsup": "^8.3.6",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.24.0",
+    "vitest": "^3.0.5"
+  }
+}

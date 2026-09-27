@@ -1,0 +1,46 @@
+{
+  "name": "manifestlock",
+  "version": "0.1.0",
+  "description": "Detect manifest confusion in npm packages by diffing registry metadata against actual tarball package.json",
+  "keywords": [
+    "security",
+    "manifest-confusion",
+    "npm",
+    "audit",
+    "supply-chain",
+    "tarball",
+    "diff"
+  ],
+  "author": "Signal Tools Authors",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "manifestlock": "./dist/cli.js"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "tar": "^7.4.3"
+  },
+  "devDependencies": {
+    "@types/tar": "^6.1.13"
+  }
+}
