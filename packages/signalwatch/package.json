@@ -1,6 +1,6 @@
 {
   "name": "signalwatch",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Heuristic detection library for identifying conversational patterns associated with unhealthy user-AI interaction dynamics",
   "keywords": [
     "ai-safety",
