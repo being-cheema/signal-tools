@@ -19,6 +19,13 @@ describe('CLI E2E Tests', () => {
   let maliciousTarballCleanup: () => Promise<void>;
 
   beforeAll(async () => {
+    // 0. Ensure CLI is built before E2E tests run
+    if (!fs.existsSync(CLI_PATH)) {
+      await execFileAsync('npm', ['run', 'build'], {
+        cwd: path.resolve(__dirname, '..'),
+      });
+    }
+
     // 1. Build synthetic clean tarball
     const cleanTar = await createSyntheticTarball({
       packageJson: {
