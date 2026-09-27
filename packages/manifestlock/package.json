@@ -1,6 +1,6 @@
 {
   "name": "manifestlock",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Detect manifest confusion in npm packages by diffing registry metadata against actual tarball package.json",
   "keywords": [
     "security",
