@@ -15,7 +15,7 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "manifestlock": "./dist/cli.js"
+    "manifestlock": "dist/cli.js"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
