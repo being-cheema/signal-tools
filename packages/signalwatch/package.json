@@ -28,6 +28,7 @@
     "LICENSE"
   ],
   "scripts": {
+    "lint": "eslint .",
     "build": "tsup",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"

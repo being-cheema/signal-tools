@@ -1,0 +1,130 @@
+# ==============================================================================
+# Independent Package Release Workflow
+# ==============================================================================
+# This monorepo uses independent package release tags to decouple releases:
+#   - 'manifestlock-v<semver>' (e.g. manifestlock-v0.1.0, manifestlock-v1.0.0)
+#   - 'signalwatch-v<semver>'  (e.g. signalwatch-v0.1.0, signalwatch-v1.2.3)
+#
+# Pushing a tag matching either pattern automatically runs targeted checks,
+# builds, verifies package.json version alignment, publishes to npm via OIDC
+# Trusted Publishing (provenance enabled, no long-lived secrets), and creates
+# a GitHub Release.
+#
+# Do NOT push naked tags (e.g. 'v1.0.0'). Only prefixed tags trigger releases.
+# ==============================================================================
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'manifestlock-v*'
+      - 'signalwatch-v*'
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  release:
+    name: Publish and Release Package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Parse and validate release tag
+        id: parse
+        shell: bash
+        run: |
+          TAG="${{ github.ref_name }}"
+          echo "Evaluating tag: $TAG"
+
+          if [[ "$TAG" =~ ^manifestlock-v([0-9]+\.[0-9]+\.[0-9]+.*)$ ]]; then
+            PACKAGE="manifestlock"
+            VERSION="${BASH_REMATCH[1]}"
+          elif [[ "$TAG" =~ ^signalwatch-v([0-9]+\.[0-9]+\.[0-9]+.*)$ ]]; then
+            PACKAGE="signalwatch"
+            VERSION="${BASH_REMATCH[1]}"
+          else
+            echo "::error::Tag '$TAG' does not match expected convention 'manifestlock-v<semver>' or 'signalwatch-v<semver>'."
+            exit 1
+          fi
+
+          echo "Target package: $PACKAGE"
+          echo "Target version: $VERSION"
+
+          echo "package=$PACKAGE" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (22.x) with npm registry
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify package version matches tag
+        shell: bash
+        env:
+          TARGET_PKG: ${{ steps.parse.outputs.package }}
+        run: |
+          PACKAGE="${{ steps.parse.outputs.package }}"
+          TAG_VERSION="${{ steps.parse.outputs.version }}"
+          PKG_VERSION=$(node -p "require('./packages/' + process.env.TARGET_PKG + '/package.json').version" 2>/dev/null || echo "")
+
+          echo "Package directory: packages/$PACKAGE"
+          echo "Version in package.json: '$PKG_VERSION'"
+          echo "Version from git tag:    '$TAG_VERSION'"
+
+          if [ -z "$PKG_VERSION" ]; then
+            echo "::error::Could not read version from packages/$PACKAGE/package.json"
+            exit 1
+          fi
+
+          if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::Version mismatch! packages/$PACKAGE/package.json declares version '$PKG_VERSION', but tag specifies '$TAG_VERSION'. Bump version in package.json before tagging."
+            exit 1
+          fi
+
+          echo "Version verification successful."
+
+      - name: Run scoped package lint
+        run: npm run lint --workspace=packages/${{ steps.parse.outputs.package }}
+
+      - name: Run scoped package typecheck
+        run: npm run typecheck --workspace=packages/${{ steps.parse.outputs.package }}
+
+      - name: Run scoped package tests
+        run: npm run test --workspace=packages/${{ steps.parse.outputs.package }}
+
+      - name: Build target package
+        run: npm run build --workspace=packages/${{ steps.parse.outputs.package }}
+
+      - name: Publish to npm with provenance (OIDC)
+        run: npm publish --workspace=packages/${{ steps.parse.outputs.package }} --access public --provenance
+
+      - name: Create GitHub Release
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PACKAGE="${{ steps.parse.outputs.package }}"
+          VERSION="${{ steps.parse.outputs.version }}"
+          TAG="${{ steps.parse.outputs.tag }}"
+
+          CHANGELOG_FILE="packages/$PACKAGE/CHANGELOG.md"
+          if [ -f "$CHANGELOG_FILE" ]; then
+            NOTES="See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/$TAG/$CHANGELOG_FILE) for detailed release notes."
+          else
+            NOTES="Release $PACKAGE v$VERSION. See commit history for changes."
+          fi
+
+          gh release create "$TAG" \
+            --title "$PACKAGE v$VERSION" \
+            --notes "$NOTES"
